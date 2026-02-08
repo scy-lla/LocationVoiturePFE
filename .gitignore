@@ -1,15 +1,19 @@
-###> Symfony ###
-.env
-.env.local
-.env.*.local
-var/
-vendor/
-
-###> React ###
-frontend/node_modules
-frontend/.env
-frontend/build
-
-###> Autres ###
+# Fichiers système
 .DS_Store
 Thumbs.db
+git rm --cached backend
+# Dossiers backend (Symfony)
+/backend/var/cache/
+/backend/var/log/
+/backend/.env.local
+/backend/.env.local.php
+/backend/vendor/
+
+# Dossiers frontend (React)
+/frontend/node_modules/
+/frontend/build/
+/frontend/.env.local
+
+# Autres
+*.log
+.env
