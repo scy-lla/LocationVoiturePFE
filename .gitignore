@@ -1,0 +1,15 @@
+###> Symfony ###
+.env
+.env.local
+.env.*.local
+var/
+vendor/
+
+###> React ###
+frontend/node_modules
+frontend/.env
+frontend/build
+
+###> Autres ###
+.DS_Store
+Thumbs.db
