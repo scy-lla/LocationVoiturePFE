@@ -1,12 +1,17 @@
 # Fichiers système
 .DS_Store
 Thumbs.db
-git rm --cached backend
+
+# Fichiers sensibles (NE JAMAIS COMMITER)
+.env
+/backend/.env
+/backend/.env.local
+/backend/.env.local.php
+/backend/config/jwt/private.pem
+
 # Dossiers backend (Symfony)
 /backend/var/cache/
 /backend/var/log/
-/backend/.env.local
-/backend/.env.local.php
 /backend/vendor/
 
 # Dossiers frontend (React)
@@ -16,4 +21,3 @@ git rm --cached backend
 
 # Autres
 *.log
-.env
