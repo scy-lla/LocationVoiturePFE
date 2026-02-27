@@ -20,7 +20,7 @@ class Voiture
     private ?string $marque = null;
 
     #[ORM\Column(length: 100)]
-    private ?string $model = null;
+    private ?string $modele = null;
 
     #[ORM\Column]
     private ?int $annee = null;
@@ -29,13 +29,13 @@ class Voiture
     private ?string $prixJour = null;
 
     #[ORM\Column]
-    private ?bool $disponiblité = null;
+    private ?bool $disponibilite = null;
 
     #[ORM\Column(length: 20)]
     private ?string $immatriculation = null;
 
     #[ORM\Column(length: 100, nullable: true)]
-    private ?string $catégorie = null;
+    private ?string $categorie = null;
 
     #[ORM\Column(length: 50, nullable: true)]
     private ?string $carburant = null;
@@ -74,14 +74,14 @@ class Voiture
         return $this;
     }
 
-    public function getModel(): ?string
+    public function getModele(): ?string
     {
-        return $this->model;
+        return $this->modele;
     }
 
-    public function setModel(string $model): static
+    public function setModele(string $modele): static
     {
-        $this->model = $model;
+        $this->modele = $modele;
 
         return $this;
     }
@@ -110,14 +110,14 @@ class Voiture
         return $this;
     }
 
-    public function isDisponiblité(): ?bool
+    public function isDisponibilite(): ?bool
     {
-        return $this->disponiblité;
+        return $this->disponibilite;
     }
 
-    public function setDisponiblité(bool $disponiblité): static
+    public function setDisponibilite(bool $disponibilite): static
     {
-        $this->disponiblité = $disponiblité;
+        $this->disponibilite = $disponibilite;
 
         return $this;
     }
@@ -134,14 +134,14 @@ class Voiture
         return $this;
     }
 
-    public function getCatégorie(): ?string
+    public function getCategorie(): ?string
     {
-        return $this->catégorie;
+        return $this->categorie;
     }
 
-    public function setCatégorie(?string $catégorie): static
+    public function setCategorie(?string $categorie): static
     {
-        $this->catégorie = $catégorie;
+        $this->categorie = $categorie;
 
         return $this;
     }
