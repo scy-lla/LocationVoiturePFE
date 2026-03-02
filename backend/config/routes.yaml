@@ -9,3 +9,6 @@
 
 controllers:
     resource: routing.controllers
+# Route ajoutée pour la connexion JWT
+api_login_check:
+    path: /api/login_check
