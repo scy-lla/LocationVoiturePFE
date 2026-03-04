@@ -17,25 +17,16 @@ security:
             # Ensure dev tools and static assets are always allowed
             pattern: ^/(_profiler|_wdt|assets|build)/
             security: false #Pas besoin d'être connecté pour y accéder ( Parce que si tu dois être connecté pour accéder au profiler... comment tu débogues si tu n'arrives pas à te connecter)
-        main:
-            lazy: true
-            provider: app_user_provider
-
-            # Activate different ways to authenticate:
-            # https://symfony.com/doc/current/security.html#the-firewall
-
-            # https://symfony.com/doc/current/security/impersonating_user.html
-            # switch_user: true
 
 
-#AJOUTER :
+            #AJOUTER :
         # 1. Firewall pour le login (public, accepte JSON) , C'est là que le frontend envoie email/password pour obtenir un token 
         login:
             pattern: ^/api/login #Ces règles s'appliquent aux URLs qui commencent par /api/login"
             stateless: true #Une API REST ne garde pas de session. pas de session, chaque requête doit avoir son token
             json_login: # Accepte les données de connexion en JSON (pas formulaire HTML) → parfait pour React/Postman
                 check_path: /api/login_check #URL que le frontend appellera pour se connecter
-
+                username_path: email #Le champ qui identifie l'utilisateur s'appelle email dans le JSON
                 #Ce sont des services du bundle JWT qui génèrent le token ou l'erreur
                 success_handler: lexik_jwt_authentication.handler.authentication_success
                 failure_handler: lexik_jwt_authentication.handler.authentication_failure
@@ -46,6 +37,15 @@ security:
             stateless: true
             jwt: ~ #Symfony va vérifier que chaque requête a un token valide dans l'en-tête Authorization: Bearer <token>
 
+        main:
+            lazy: true
+            provider: app_user_provider
+
+            # Activate different ways to authenticate:
+            # https://symfony.com/doc/current/security.html#the-firewall
+
+            # https://symfony.com/doc/current/security/impersonating_user.html
+            # switch_user: true
 
 
     # Note: Only the *first* matching rule is applied
