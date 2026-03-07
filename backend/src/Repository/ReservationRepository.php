@@ -40,4 +40,33 @@ class ReservationRepository extends ServiceEntityRepository
     //            ->getOneOrNullResult()
     //        ;
     //    }
+        // ============================================================================
+  // ============================================================================
+// MÉTHODE : checkConflict()
+// Trouve les réservations qui chevauchent une période donnée pour une voiture
+// ============================================================================
+
+public function checkConflict(int $voitureId, \DateTime $dateDebut, \DateTime $dateFin): array
+{
+    return $this->createQueryBuilder('r')
+        // 1️⃣ Filtrer par voiture
+        ->andWhere('r.voiture = :voitureId')
+        ->setParameter('voitureId', $voitureId)
+        
+        // 2️⃣ Ignorer les réservations annulées
+        ->andWhere('r.statut != :statutAnnulee')
+        ->setParameter('statutAnnulee', 'annulee')
+        
+        // 3️⃣ LOGIQUE DE CHEVAUCHEMENT (CORRIGÉE ✅) :
+        // Deux périodes se chevauchent si :
+        // (début_existant <= fin_nouveau) ET (fin_existant >= début_nouveau)
+        ->andWhere('r.dateDebut <= :dateFin')
+        ->andWhere('r.dateFin >= :dateDebut')
+        ->setParameter('dateDebut', $dateDebut)
+        ->setParameter('dateFin', $dateFin)
+        
+        // 4️⃣ Exécuter et retourner les résultats
+        ->getQuery()
+        ->getResult();
+}
 }

@@ -1,72 +1,49 @@
 security:
-    # https://symfony.com/doc/current/security.html#registering-the-user-hashing-passwords
     password_hashers:
-        Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'auto' #Dit à Symfony de hacher automatiquement les mots de passe ,Symfony choisit le meilleur algorithme (bcrypt par défaut)
+        Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'auto'
 
-    # https://symfony.com/doc/current/security.html#loading-the-user-the-user-provider
     providers:
-        # used to reload user from session & other features (e.g. switch_user)
-        #Sans ça, Symfony ne sait pas quelle table chercher dans la BDD pour trouver les utilisateurs
         app_user_provider:
             entity:
-                class: App\Entity\Utilisateur  # entité utilisateur 
-                property: email # Connexion par email
-    #Un firewall = Une zone de sécurité avec ses propres règles
+                class: App\Entity\Utilisateur
+                property: email
+
     firewalls:
         dev:
-            # Ensure dev tools and static assets are always allowed
-            pattern: ^/(_profiler|_wdt|assets|build)/
-            security: false #Pas besoin d'être connecté pour y accéder ( Parce que si tu dois être connecté pour accéder au profiler... comment tu débogues si tu n'arrives pas à te connecter)
-
-
-            #AJOUTER :
-        # 1. Firewall pour le login (public, accepte JSON) , C'est là que le frontend envoie email/password pour obtenir un token 
-        login:
-            pattern: ^/api/login #Ces règles s'appliquent aux URLs qui commencent par /api/login"
-            stateless: true #Une API REST ne garde pas de session. pas de session, chaque requête doit avoir son token
-            json_login: # Accepte les données de connexion en JSON (pas formulaire HTML) → parfait pour React/Postman
-                check_path: /api/login_check #URL que le frontend appellera pour se connecter
-                username_path: email #Le champ qui identifie l'utilisateur s'appelle email dans le JSON
-                #Ce sont des services du bundle JWT qui génèrent le token ou l'erreur
-                success_handler: lexik_jwt_authentication.handler.authentication_success
-                failure_handler: lexik_jwt_authentication.handler.authentication_failure
-        
-        # 2. Firewall pour l'API (protégé par JWT)
-        api:
-            pattern: ^/api #Ces règles s'appliquent à TOUTES les routes qui commencent par /api
-            stateless: true
-            jwt: ~ #Symfony va vérifier que chaque requête a un token valide dans l'en-tête Authorization: Bearer <token>
-
+            pattern: ^/(_profiler|_wdt|css|images|js)/
+            security: false
         main:
             lazy: true
             provider: app_user_provider
 
-            # Activate different ways to authenticate:
-            # https://symfony.com/doc/current/security.html#the-firewall
+        # Firewall pour le login (public)
+        login:
+            pattern: ^/api/login
+            stateless: true
+            json_login:
+                check_path: /api/login_check
+                success_handler: lexik_jwt_authentication.handler.authentication_success
+                failure_handler: lexik_jwt_authentication.handler.authentication_failure
+        
+        # Firewall pour l'API (protégé par JWT)
+        api:
+            pattern: ^/api
+            stateless: true
+            jwt: ~
 
-            # https://symfony.com/doc/current/security/impersonating_user.html
-            # switch_user: true
-
-
-    # Note: Only the *first* matching rule is applied
+    # ✅ Configuration d'origine : access_control sous security:
     access_control:
-        # - { path: ^/admin, roles: ROLE_ADMIN }
-        # - { path: ^/profile, roles: ROLE_USER }
-
-        # AJOUTER Règles d'accès :
-        # Routes publiques (sans token) : Logique : un nouvel utilisateur n'a pas encore de token
-        - { path: ^/api/login, roles: PUBLIC_ACCESS } #Tout le monde peut essayer de se connecter
-        - { path: ^/api/register, roles: PUBLIC_ACCESS } #Tout le monde peut créer un compte
-        #Protège tes données : seuls les utilisateurs connectés peuvent voir/modifier
-        - { path: ^/api, roles: IS_AUTHENTICATED_FULLY } # Toutes les autres routes API nécessitent un token
+        - { path: ^/api/login, roles: PUBLIC_ACCESS }
+        - { path: ^/api/reservation, roles: PUBLIC_ACCESS }
+        - { path: ^/api/register, roles: PUBLIC_ACCESS }
+        # ⚠️ On a retiré la ligne de test ^/api/reservation
+        - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
 
 when@test:
     security:
         password_hashers:
-            # Password hashers are resource-intensive by design to ensure security.
-            # In tests, it's safe to reduce their cost to improve performance.
             Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface:
                 algorithm: auto
-                cost: 4 # Lowest possible value for bcrypt
-                time_cost: 3 # Lowest possible value for argon
-                memory_cost: 10 # Lowest possible value for argon
+                cost: 4
+                time_cost: 3
+                memory_cost: 10
