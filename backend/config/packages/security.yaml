@@ -1,49 +1,95 @@
 security:
+ 
+    # HASHAGE DES MOTS DE PASSE
+    # choisit automatiquement le meilleur algorithme
+    # disponible (bcrypt ou sodium)
     password_hashers:
-        Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'auto'
+        Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'auto' 
 
+    # PROVIDERS : Comment Symfony charge l'utilisateur
+    # On utilise l'entité Utilisateur et on identifie
+    # l'utilisateur par son champ 'email' en base de données
     providers:
         app_user_provider:
             entity:
                 class: App\Entity\Utilisateur
                 property: email
 
+    # FIREWALLS : Les règles de sécurité par zone d'URL
+    # ORDRE IMPORTANT : du plus spécifique au plus général
     firewalls:
+        # FIREWALL DEV
+        # Désactive la sécurité pour les outils de développement
+        # (profiler Symfony, debug toolbar, assets statiques)
         dev:
             pattern: ^/(_profiler|_wdt|css|images|js)/
             security: false
-        main:
-            lazy: true
-            provider: app_user_provider
 
-        # Firewall pour le login (public)
+        # FIREWALL LOGIN
+        # Gère uniquement la route /api/login_check
+        # - stateless : pas de session (on utilise JWT)
+        # - json_login : attend un body JSON avec email + password
+        # - username_path: email → Symfony cherche le champ "email"
+        #   dans le JSON au lieu du champ "username" par défaut
+        # - Les handlers Lexik renvoient le token JWT en cas de
+        #   succès, ou un message d'erreur en cas d'échec
         login:
             pattern: ^/api/login
             stateless: true
             json_login:
                 check_path: /api/login_check
+                username_path: email        # lit "email" dans le JSON
+                password_path: password     # "password" dans le JSON
                 success_handler: lexik_jwt_authentication.handler.authentication_success
                 failure_handler: lexik_jwt_authentication.handler.authentication_failure
-        
-        # Firewall pour l'API (protégé par JWT)
+
+        # FIREWALL API
+        # Protège toutes les routes /api/*
+        # - stateless : pas de session, chaque requête doit
+        #   contenir le token JWT dans le header Authorization
+        # - jwt: ~ → active la vérification du token JWT
+        #   via LexikJWTAuthenticationBundle
         api:
             pattern: ^/api
             stateless: true
             jwt: ~
 
-    # ✅ Configuration d'origine : access_control sous security:
+        # FIREWALL MAIN
+        # Firewall par défaut pour les routes non-API
+        # Toujours en dernier (catch-all)
+        # - lazy : charge l'utilisateur seulement si nécessaire
+        main:
+            lazy: true
+            provider: app_user_provider
+
+
+    # ACCESS CONTROL : Qui peut accéder à quoi
+    # Les règles sont évaluées de haut en bas,
+    # la PREMIÈRE qui correspond est appliquée
     access_control:
+        # Route de login: accessible sans être connecté
         - { path: ^/api/login, roles: PUBLIC_ACCESS }
+
+        # Route de réservation: cessible sans être connecté
+        # (consulter les voitures disponibles)
         - { path: ^/api/reservation, roles: PUBLIC_ACCESS }
+
+        # Route d'inscription accessible sans être connecté
         - { path: ^/api/register, roles: PUBLIC_ACCESS }
-        # ⚠️ On a retiré la ligne de test ^/api/reservation
+
+        # Toutes les autres routes /api → nécessite un JWT valide
         - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
 
+
+# CONFIGURATION POUR LES TESTS AUTOMATISÉS
+# Utilise un hashage volontairement faible pour
+# accélérer l'exécution des tests (ne jamais utiliser
+# ces valeurs en production !)
 when@test:
     security:
         password_hashers:
             Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface:
                 algorithm: auto
-                cost: 4
-                time_cost: 3
-                memory_cost: 10
+                cost: 4        # bcrypt: coût minimal (défaut = 13)
+                time_cost: 3   # argon2: temps minimal
+                memory_cost: 10 # argon2: mémoire minimale

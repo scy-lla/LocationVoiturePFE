@@ -2,47 +2,42 @@
 
 namespace App\Controller\Api\Admin;
 
-use App\Entity\Utilisateur;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Repository\UtilisateurRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
-#[Route('/api/admin', name: 'app_api_admin_')]
-final class UserController extends AbstractController
+#[Route('/api/admin')]
+class UserController extends AbstractController
 {
-    public function __construct(
-        private EntityManagerInterface $em
-    ) {
-    }
-
-    #[Route('/clients', name: 'clients', methods: ['GET'])]
-    #[IsGranted('ROLE_ADMIN')]
-    public function listClients(): JsonResponse
+    #[Route('/clients', name: 'api_admin_clients', methods: ['GET'])]
+    #[IsGranted('ROLE_ADMIN')]  //Accès réservé aux admins uniquement
+    public function listClients(UtilisateurRepository $utilisateurRepository): JsonResponse
     {
-        // 1. Récupérer tous les utilisateurs depuis la base de données
-        $users = $this->em->getRepository(Utilisateur::class)->findAll();
+        // Récupère tous les utilisateurs depuis la base de données
+        $utilisateurs = $utilisateurRepository->findAll();
         
-        // 2. Préparer les données à renvoyer (sans les mots de passe !)
-        $usersData = [];
-        
-        foreach ($users as $user) {
-            $usersData[] = [
-                'id' => $user->getId(),
-                'email' => $user->getEmail(),
-                'nom' => $user->getNom(),
-                'prenom' => $user->getPrenom(),
-                'roles' => $user->getRoles(),
-                // ⚠️ IMPORTANT : On ne renvoie JAMAIS le mot de passe !
-            ];
+        $data = [];
+        foreach ($utilisateurs as $utilisateur) {
+            // On filtre pour n'afficher que les clients (ROLE_USER)
+            if (in_array('ROLE_USER', $utilisateur->getRoles())) {
+                $data[] = [
+                    'id' => $utilisateur->getId(),
+                    'email' => $utilisateur->getEmail(),
+                    'nom' => $utilisateur->getNom(),
+                    'prenom' => $utilisateur->getPrenom(),
+                    'roles' => $utilisateur->getRoles(),
+                    //'created_at' => $utilisateur->getCreatedAt()?->format('Y-m-d H:i:s'),
+                ];
+            }
         }
         
-        // 3. Renvoyer la réponse JSON
-        return $this->json([
+        return new JsonResponse([
             'message' => 'Liste des clients récupérée avec succès',
-            'count' => count($usersData),
-            'clients' => $usersData
-        ], 200);
+            'count' => count($data),
+            'clients' => $data
+        ], Response::HTTP_OK);
     }
 }
