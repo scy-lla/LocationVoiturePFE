@@ -7,43 +7,40 @@ security:
             entity:
                 class: App\Entity\Utilisateur
                 property: email
+        # used to reload user from session & other features (e.g. switch_user)
 
     firewalls:
         dev:
             pattern: ^/(_profiler|_wdt|css|images|js)/
             security: false
-        main:
-            lazy: true
-            provider: app_user_provider
 
-        # Firewall pour le login (public)
         login:
             pattern: ^/api/login
             stateless: true
             json_login:
                 check_path: /api/login_check
+                username_path: email 
+                password_path: password
                 success_handler: lexik_jwt_authentication.handler.authentication_success
                 failure_handler: lexik_jwt_authentication.handler.authentication_failure
-        
-        # Firewall pour l'API (protégé par JWT)
+
         api:
             pattern: ^/api
             stateless: true
             jwt: ~
+            provider: app_user_provider
 
-    # ✅ Configuration d'origine : access_control sous security:
+        main:
+            lazy: true
+            provider: app_user_provider
+            stateless: true
+
     access_control:
+        # Routes PUBLIQUES (sans authentification)
         - { path: ^/api/login, roles: PUBLIC_ACCESS }
-        - { path: ^/api/reservation, roles: PUBLIC_ACCESS }
         - { path: ^/api/register, roles: PUBLIC_ACCESS }
-        # ⚠️ On a retiré la ligne de test ^/api/reservation
+        - { path: ^/api/voitures$, roles: PUBLIC_ACCESS, methods: [GET] }
+        - { path: ^/api/voitures/\d+$, roles: PUBLIC_ACCESS, methods: [GET] }
+        
+        # Routes PROTÉGÉES (nécessitent authentification)
         - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
-
-when@test:
-    security:
-        password_hashers:
-            Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface:
-                algorithm: auto
-                cost: 4
-                time_cost: 3
-                memory_cost: 10
