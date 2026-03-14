@@ -24,4 +24,4 @@ class AvailabilityController extends AbstractController
 
         return $this->json($voituresDisponibles, 200, [], ['groups' => 'voiture:read']);
     }
-}"// Derniäre modification Kawtar $(date)" 
+}
