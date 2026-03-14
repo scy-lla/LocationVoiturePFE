@@ -15,4 +15,4 @@ class AppFixtures extends Fixture
         $manager->flush();
     }
 }
-"// Derniäre modification Kawtar $(date)" 
+

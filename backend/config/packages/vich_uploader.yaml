@@ -4,4 +4,4 @@ vich_uploader:
         voiture_images:
             uri_prefix: '/uploads/voitures'
             upload_destination: '%kernel.project_dir%/public/uploads/voitures'
-            namer: Vich\UploaderBundle\Naming\SmartUniqueNamer"// Modifi‚ par Kawtar le $(date)" 
+            namer: Vich\UploaderBundle\Naming\SmartUniqueNamer

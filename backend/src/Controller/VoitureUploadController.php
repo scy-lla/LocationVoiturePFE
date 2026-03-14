@@ -58,4 +58,4 @@ class VoitureUploadController extends AbstractController
         // Retourner la réponse JSON
         return $this->json($voiture, 201, [], ['groups' => 'voiture:read']);
     }
-}"// Ajustement Kawtar 14/03/2026" 
+}
