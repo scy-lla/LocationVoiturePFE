@@ -20,4 +20,5 @@ Thumbs.db
 /frontend/.env.local
 
 # Autres
-*.log
+*.log"LocationVoiturePFE/" 
+"backend/LocationVoiturePFE/" 
