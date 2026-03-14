@@ -44,4 +44,4 @@ class VoitureFixtures extends Fixture
         
         echo "✅ 27 voitures ajoutées avec succès !\n";
     }
-}
+}"// Derni�re modification Kawtar $(date)" 
