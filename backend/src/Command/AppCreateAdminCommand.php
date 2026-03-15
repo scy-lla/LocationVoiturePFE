@@ -44,7 +44,7 @@ class AppCreateAdminCommand extends Command
         $this->em->flush();
         
         // 4. Afficher le succès
-        $io->success('✅ Admin créé avec succès !');
+        $io->success('Admin créé avec succès !');
         $io->text([
             'Email: admin@location.com',
             'Mot de passe: admin123',
