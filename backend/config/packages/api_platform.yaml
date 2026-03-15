@@ -5,16 +5,3 @@ api_platform:
         stateless: true
         cache_headers:
             vary: ['Content-Type', 'Authorization', 'Origin']
-    formats:
-        jsonld: ['application/ld+json']
-        json: ['application/json']
-        html: ['text/html']
-        multipart: ['multipart/form-data']
-    
-    # ✅ Patch formats pour les modifications (PUT/PATCH)
-    patch_formats:
-        json: ['application/merge-patch+json']
-    
-    # ✅ Activer Swagger/OpenAPI
-    swagger:
-        versions: [3]

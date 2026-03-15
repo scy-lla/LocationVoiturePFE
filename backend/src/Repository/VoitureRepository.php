@@ -40,19 +40,4 @@ class VoitureRepository extends ServiceEntityRepository
     //            ->getOneOrNullResult()
     //        ;
     //    }
-    // src/Repository/VoitureRepository.php
-
-public function findDisponibles(\DateTime $dateDebut, \DateTime $dateFin): array
-{
-    return $this->createQueryBuilder('v')
-        ->leftJoin('v.reservations', 'r')
-        ->andWhere('r.statut != :statut OR r IS NULL')
-        ->orWhere('r.dateFin < :dateDebut')
-        ->orWhere('r.dateDebut > :dateFin')
-        ->setParameter('statut', 'confirmee')
-        ->setParameter('dateDebut', $dateDebut)
-        ->setParameter('dateFin', $dateFin)
-        ->getQuery()
-        ->getResult();
-}
 }

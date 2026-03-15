@@ -13,10 +13,10 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 class UserController extends AbstractController
 {
     #[Route('/clients', name: 'api_admin_clients', methods: ['GET'])]
-    #[IsGranted('ROLE_ADMIN')]
+    #[IsGranted('ROLE_ADMIN')]  //Accès réservé aux admins uniquement
     public function listClients(UtilisateurRepository $utilisateurRepository): JsonResponse
     {
-        // Récupère tous les utilisateurs ayant le rôle ROLE_USER (pas les admins)
+        // Récupère tous les utilisateurs depuis la base de données
         $utilisateurs = $utilisateurRepository->findAll();
         
         $data = [];
@@ -29,7 +29,7 @@ class UserController extends AbstractController
                     'nom' => $utilisateur->getNom(),
                     'prenom' => $utilisateur->getPrenom(),
                     'roles' => $utilisateur->getRoles(),
-                    'created_at' => $utilisateur->getCreatedAt()?->format('Y-m-d H:i:s'),
+                    //'created_at' => $utilisateur->getCreatedAt()?->format('Y-m-d H:i:s'),
                 ];
             }
         }
