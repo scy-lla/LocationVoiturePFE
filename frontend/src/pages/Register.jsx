@@ -16,6 +16,8 @@ const Register = ({ isModal = false }) => {
     const { register } = useAuth();
     const navigate = useNavigate();
 
+    // Met à jour le champ correspondant dans formData
+    // [e.target.name] permet de gérer tous les champs avec une seule fonction
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
@@ -26,9 +28,14 @@ const Register = ({ isModal = false }) => {
         try {
             await register(formData);
             toast.success('Compte créé avec succès !');
-            navigate('/login');
+            // Rediriger vers login seulement si page seule
+            // Si isModal=true → on reste dans le modal Login
+            if (!isModal) {
+                navigate('/login');
+            }
         } catch (error) {
-            toast.error(error.response?.data?.message || "Erreur lors de l'inscription");
+            // error.message car AuthContext throw new Error(message)
+            toast.error(error.message || "Erreur lors de l'inscription");
         } finally {
             setLoading(false);
         }

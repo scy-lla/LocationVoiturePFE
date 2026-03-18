@@ -10,7 +10,7 @@ const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
-    const { login } = useAuth();
+    const { login, isAdmin } = useAuth();
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
@@ -19,17 +19,16 @@ const Login = () => {
         try {
             await login(email, password);
             toast.success('Connexion réussie !');
-            const token = localStorage.getItem('token');
-            const base64Url = token.split('.')[1];
-            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-            const payload = JSON.parse(window.atob(base64));
-            if (payload.roles?.includes('ROLE_ADMIN')) {
+            // isAdmin() lit le token JWT pour vérifier le rôle
+            // au lieu de décoder manuellement le token ici
+            if (isAdmin()) {
                 navigate('/admin/dashboard');
             } else {
                 navigate('/');
             }
         } catch (error) {
-            toast.error(error.response?.data?.message || 'Erreur de connexion');
+            // error.message car AuthContext throw new Error(message)
+            toast.error(error.message || 'Erreur de connexion');
         } finally {
             setLoading(false);
         }
@@ -45,7 +44,7 @@ const Login = () => {
                     Connectez-vous ou créez un compte pour réserver une voiture
                 </p>
 
-                {/* Onglets */}
+                {/* Onglets Connexion / Inscription */}
                 <div className="flex bg-gray-100 rounded-full p-1 mb-6">
                     <button
                         onClick={() => setActiveTab('connexion')}
@@ -108,7 +107,7 @@ const Login = () => {
                     </form>
                 )}
 
-                {/* Formulaire Inscription */}
+                {/* Formulaire Inscription — intégré dans le modal */}
                 {activeTab === 'inscription' && <Register isModal={true} />}
             </div>
         </div>
