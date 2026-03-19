@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-const Register = ({ isModal = false }) => {
+const Register = ({ isModal = false, onSwitchToLogin }) => {
     const [formData, setFormData] = useState({
         email: '',
         password: '',
@@ -16,8 +16,6 @@ const Register = ({ isModal = false }) => {
     const { register } = useAuth();
     const navigate = useNavigate();
 
-    // Met à jour le champ correspondant dans formData
-    // [e.target.name] permet de gérer tous les champs avec une seule fonction
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
@@ -28,13 +26,13 @@ const Register = ({ isModal = false }) => {
         try {
             await register(formData);
             toast.success('Compte créé avec succès !');
-            // Rediriger vers login seulement si page seule
-            // Si isModal=true → on reste dans le modal Login
-            if (!isModal) {
+            if (isModal && onSwitchToLogin) {
+                // Si modal → switcher vers l'onglet connexion
+                setTimeout(() => onSwitchToLogin(), 1500);
+            } else {
                 navigate('/login');
             }
         } catch (error) {
-            // error.message car AuthContext throw new Error(message)
             toast.error(error.message || "Erreur lors de l'inscription");
         } finally {
             setLoading(false);
@@ -56,7 +54,6 @@ const Register = ({ isModal = false }) => {
                     required
                 />
             </div>
-
             <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Prénom</label>
                 <input
@@ -69,7 +66,6 @@ const Register = ({ isModal = false }) => {
                     required
                 />
             </div>
-
             <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                 <input
@@ -82,7 +78,6 @@ const Register = ({ isModal = false }) => {
                     required
                 />
             </div>
-
             <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
                 <input
@@ -94,7 +89,6 @@ const Register = ({ isModal = false }) => {
                     className="w-full px-4 py-3 bg-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
             </div>
-
             <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Mot de passe</label>
                 <input
@@ -107,7 +101,6 @@ const Register = ({ isModal = false }) => {
                     required
                 />
             </div>
-
             <button
                 type="submit"
                 disabled={loading}
@@ -118,10 +111,8 @@ const Register = ({ isModal = false }) => {
         </form>
     );
 
-    // Si utilisé dans le modal Login → pas de fond
     if (isModal) return formContent;
 
-    // Si page seule → avec fond noir
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-900">
             <ToastContainer />
