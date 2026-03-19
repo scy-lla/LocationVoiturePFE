@@ -70,12 +70,15 @@ security:
         # Route de login: accessible sans être connecté
         - { path: ^/api/login, roles: PUBLIC_ACCESS }
 
+        # Route d'inscription accessible sans être connecté
+        - { path: ^/api/register, roles: PUBLIC_ACCESS }
+        - { path: ^/api/voitures, roles: PUBLIC_ACCESS, methods: [GET] }
+
         # Route de réservation: cessible sans être connecté
         # (consulter les voitures disponibles)
         - { path: ^/api/reservation, roles: PUBLIC_ACCESS }
 
-        # Route d'inscription accessible sans être connecté
-        - { path: ^/api/register, roles: PUBLIC_ACCESS }
+       
 
         # Toutes les autres routes /api → nécessite un JWT valide
         - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
