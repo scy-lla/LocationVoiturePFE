@@ -11,43 +11,55 @@ const Login = () => {
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState({});
-    const { login, isAdmin } = useAuth();
+    
+    // On récupère login ET isAdmin du contexte
+    const { login, isAdmin } = useAuth(); 
     const navigate = useNavigate();
 
-    // Validation du formulaire de connexion
+    // Validation du formulaire
     const validate = () => {
         const newErrors = {};
-
         if (!email.trim()) {
             newErrors.email = 'L\'email est obligatoire';
         } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
             newErrors.email = 'Email invalide';
         }
-
         if (!password.trim()) {
             newErrors.password = 'Le mot de passe est obligatoire';
         } else if (password.length < 6) {
             newErrors.password = 'Le mot de passe doit contenir au moins 6 caractères';
         }
-
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!validate()) return; // Stop si erreurs
+        if (!validate()) return;
+        
         setLoading(true);
         try {
+            // 1. Exécuter la connexion (sauvegarde le token JWT)
             await login(email, password);
+            
             toast.success('Connexion réussie !');
-            if (isAdmin()) {
-                navigate('/admin/dashboard');
+
+            // 2. Utiliser la fonction isAdmin() du contexte
+            // Elle va lire le token JWT qu'on vient de sauvegarder et décoder les rôles
+            const userIsAdmin = isAdmin(); 
+
+            // 3. Redirection intelligente
+            if (userIsAdmin) {
+                // Admin → Page Réservations (Dashboard complet)
+                navigate('/admin/reservations');
             } else {
-                navigate('/');
+                // Client → Ses propres réservations
+                navigate('/mes-reservations');
             }
+            
         } catch (error) {
-            toast.error(error.message || 'Erreur de connexion');
+            console.error("Erreur login:", error);
+            toast.error(error.message || 'Email ou mot de passe incorrect');
         } finally {
             setLoading(false);
         }
@@ -90,9 +102,7 @@ const Login = () => {
                 {activeTab === 'connexion' && (
                     <form onSubmit={handleSubmit} noValidate>
                         <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Email
-                            </label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                             <input
                                 type="email"
                                 placeholder="exemple@email.com"
@@ -105,15 +115,12 @@ const Login = () => {
                                     errors.email ? 'ring-2 ring-red-500' : 'focus:ring-purple-500'
                                 }`}
                             />
-                            {/* Message erreur email */}
                             {errors.email && (
                                 <p className="text-red-500 text-xs mt-1">{errors.email}</p>
                             )}
                         </div>
                         <div className="mb-6">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Mot de passe
-                            </label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Mot de passe</label>
                             <input
                                 type="password"
                                 placeholder="••••••••"
@@ -126,7 +133,6 @@ const Login = () => {
                                     errors.password ? 'ring-2 ring-red-500' : 'focus:ring-purple-500'
                                 }`}
                             />
-                            {/* Message erreur mot de passe */}
                             {errors.password && (
                                 <p className="text-red-500 text-xs mt-1">{errors.password}</p>
                             )}
