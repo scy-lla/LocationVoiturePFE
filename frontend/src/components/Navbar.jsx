@@ -20,12 +20,14 @@ const Navbar = () => {
 
                     {/* Logo */}
                     <div className="flex items-center gap-3">
+                        {/* MODIFIÉ PAR FADMA : EC au lieu de AL */}
                         <div className="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
-                            AL
+                            EC
                         </div>
                         <div>
+                            {/* MODIFIÉ PAR FADMA : EliteCar Maroc au lieu de AutoLoc Premium */}
                             <div className={`font-bold text-lg ${isAdminPage ? 'text-white' : 'text-gray-900'}`}>
-                                AutoLoc Premium
+                                EliteCar Maroc
                             </div>
                             <div className="text-xs text-gray-400">Location de luxe</div>
                         </div>
@@ -40,11 +42,12 @@ const Navbar = () => {
                             >
                                 Dashboard
                             </Link>
+                            {/* AJOUTÉ PAR FADMA : gestion voitures admin */}
                             <Link
-                                to="/admin/clients"
-                                className={`text-sm font-medium ${location.pathname === '/admin/clients' ? 'text-purple-400' : 'text-gray-300 hover:text-white'}`}
+                                to="/admin/voitures"
+                                className={`text-sm font-medium ${location.pathname === '/admin/voitures' ? 'text-purple-400' : 'text-gray-300 hover:text-white'}`}
                             >
-                                Clients
+                                Gestion Voitures
                             </Link>
                         </div>
                     ) : (
