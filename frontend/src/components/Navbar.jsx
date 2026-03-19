@@ -1,94 +1,159 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { FaUser } from 'react-icons/fa';
 
 const Navbar = () => {
-    const { user, logout, isAdmin } = useAuth();
+    // Récupération des données utilisateur et de la fonction de déconnexion depuis le contexte d'authentification
+    const { user, logout } = useAuth();
+    
+    // Hooks pour la navigation programmée et pour connaître l'URL actuelle
     const navigate = useNavigate();
     const location = useLocation();
 
+    /**
+     * Gère la déconnexion :
+     * 1. Appelle la fonction logout du contexte (efface le token/user)
+     * 2. Redirige vers la page d'accueil
+     */
     const handleLogout = () => {
         logout();
-        navigate('/login');
+        navigate('/');
     };
 
-    const isAdminPage = location.pathname.startsWith('/admin');
+    /**
+     * Vérifie si un lien est actif en comparant son chemin avec l'URL actuelle.
+     * Sert à appliquer la couleur bleue sur le lien actif.
+     */
+    const isActive = (path) => {
+        return location.pathname === path;
+    };
+
+    /**
+     * Gère le clic sur les liens de la page d'accueil (Ancres).
+     * Permet de scroller doucement vers une section (#apropos, #contact)
+     * même si on est sur une autre page.
+     */
+    const handleNavClick = (e, path, sectionId) => {
+        if (location.pathname !== path) {
+            // Si on n'est pas sur la home, on y navigue d'abord
+            navigate(path);
+            // Petit délai pour laisser le temps à la page de charger avant de scroller
+            setTimeout(() => {
+                const element = document.getElementById(sectionId);
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth' });
+                }
+            }, 100);
+        } else {
+            // Si on est déjà sur la home, on empêche le rechargement et on scroll direct
+            e.preventDefault();
+            const element = document.getElementById(sectionId);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+    };
 
     return (
-        <nav className={`${isAdminPage ? 'bg-gray-900' : 'bg-white'} shadow-md`}>
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between h-16 items-center">
-
-                    {/* Logo */}
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
-                            AL
+        <nav className="bg-gray-900 text-white border-b border-gray-800">
+            <div className="max-w-7xl mx-auto px-4">
+                <div className="flex justify-between items-center py-4">
+                    
+                    {/* --- LOGO --- */}
+                    <Link to="/" className="flex items-center space-x-3">
+                        <div className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg p-2 font-bold text-xl">
+                            DN
                         </div>
                         <div>
-                            <div className={`font-bold text-lg ${isAdminPage ? 'text-white' : 'text-gray-900'}`}>
-                                AutoLoc Premium
-                            </div>
-                            <div className="text-xs text-gray-400">Location de luxe</div>
+                           <h1 className="text-xl font-bold">DriveNow</h1>
+                           <p className="text-xs text-gray-400">Location de voitures</p>
                         </div>
-                    </div>
+                    </Link>
 
-                    {/* Navigation Links */}
-                    {user && isAdmin() && isAdminPage ? (
-                        <div className="flex items-center gap-6">
-                            <Link
-                                to="/admin/dashboard"
-                                className={`text-sm font-medium ${location.pathname === '/admin/dashboard' ? 'text-purple-400' : 'text-gray-300 hover:text-white'}`}
-                            >
-                                Dashboard
-                            </Link>
-                            <Link
-                                to="/admin/clients"
-                                className={`text-sm font-medium ${location.pathname === '/admin/clients' ? 'text-purple-400' : 'text-gray-300 hover:text-white'}`}
-                            >
-                                Clients
-                            </Link>
-                        </div>
-                    ) : (
-                        <div className="flex items-center gap-6">
-                            <Link to="/" className="text-sm font-medium text-gray-700 hover:text-purple-600">
-                                Accueil
-                            </Link>
-                            <Link to="/voitures" className="text-sm font-medium text-gray-700 hover:text-purple-600">
-                                Voitures
-                            </Link>
-                        </div>
-                    )}
+                    {/* --- MENU CENTRAL --- */}
+                    <div className="hidden md:flex space-x-8 items-center">
+                        
+                        {/* Liens Publics (Accueil, À propos, Voitures, Contact) */}
+                        <Link 
+                            to="/" 
+                            onClick={(e) => handleNavClick(e, '/', 'home')}
+                            className={`transition-colors font-medium ${
+                                isActive('/') && !location.hash ? 'text-blue-400' : 'text-gray-300 hover:text-white'
+                            }`}
+                        >
+                            Accueil
+                        </Link>
+                        <Link 
+                            to="/"
+                            onClick={(e) => handleNavClick(e, '/', 'apropos')}
+                            className={`transition-colors font-medium ${
+                                location.hash === '#apropos' ? 'text-blue-400' : 'text-gray-300 hover:text-white'
+                            }`}
+                        >
+                            À propos
+                        </Link>
+                        <Link 
+                            to="/voitures" 
+                            className={`transition-colors font-medium ${
+                                isActive('/voitures') ? 'text-blue-400' : 'text-gray-300 hover:text-white'
+                            }`}
+                        >
+                            Voitures
+                        </Link>
+                        <Link 
+                            to="/"
+                            onClick={(e) => handleNavClick(e, '/', 'contact')}
+                            className={`transition-colors font-medium ${
+                                location.hash === '#contact' ? 'text-blue-400' : 'text-gray-300 hover:text-white'
+                            }`}
+                        >
+                            Contact
+                        </Link>
 
-                    {/* Auth Section */}
-                    <div className="flex items-center gap-4">
-                        {user ? (
+                        {/* --------------------------------------------------------- */}
+                        {/* LIENS ADMIN (Affichés UNIQUEMENT si l'utilisateur est Admin) */}
+                        {/* --------------------------------------------------------- */}
+                        {user && user.roles?.includes('ROLE_ADMIN') && (
                             <>
-                                <div className="text-right">
-                                    <div className={`text-sm font-bold ${isAdminPage ? 'text-white' : 'text-gray-900'}`}>
-                                        {isAdmin() ? 'Administrateur' : user.email}
-                                    </div>
-                                    {isAdmin() && (
-                                        <div className="text-xs text-gray-400">{user.email}</div>
-                                    )}
-                                </div>
-                                <button
-                                    onClick={handleLogout}
-                                    className="w-9 h-9 rounded-full border border-gray-500 flex items-center justify-center text-gray-400 hover:text-white hover:border-white transition-all"
+                                {/* 👇 LIEN UNIQUE : Réservations */}
+                                {/* C'est ici que l'admin clique pour voir les Stats + le Tableau complet */}
+                                <Link 
+                                    to="/admin/reservations" 
+                                    className={`transition-colors font-medium flex items-center gap-1 ${
+                                        isActive('/admin/reservations') 
+                                            ? 'text-blue-400' // Couleur quand le lien est actif
+                                            : 'text-gray-300 hover:text-white' // Couleur normale
+                                    }`}
                                 >
-                                    →
-                                </button>
-                            </>
-                        ) : (
-                            <>
-                                <Link to="/login" className="text-sm text-gray-700 hover:text-purple-600">
-                                    Connexion
+                                    <span>Réservations</span>
                                 </Link>
-                                <Link to="/login" className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-purple-700">
-                                    Login
-                                </Link>
+                                
+                                {/* ✅ J'AI SUPPRIMÉ LE LIEN "DASHBOARD" ICI COMME DEMANDÉ */}
+                                {/* Il n'y a plus qu'un seul lien admin pour tout gérer */}
                             </>
                         )}
                     </div>
 
+                    {/* --- BOUTON LOGIN / LOGOUT --- */}
+                    {!user ? (
+                        // Si pas connecté : Afficher le bouton Login
+                        <Link 
+                            to="/login" 
+                            className="flex items-center space-x-2 bg-gradient-to-r from-blue-500 to-purple-600 px-6 py-2 rounded-full font-medium hover:from-blue-600 hover:to-purple-700 transition-all"
+                        >
+                            <FaUser size={18} />
+                            <span>Login</span>
+                        </Link>
+                    ) : (
+                        // Si connecté : Afficher le bouton Logout
+                        <button 
+                            onClick={handleLogout}
+                            className="flex items-center space-x-2 bg-gradient-to-r from-blue-500 to-purple-600 px-6 py-2 rounded-full font-medium hover:from-blue-600 hover:to-purple-700 transition-all"
+                        >
+                            <FaUser size={18} />
+                            <span>Logout</span>
+                        </button>
+                    )}
                 </div>
             </div>
         </nav>
