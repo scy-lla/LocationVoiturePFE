@@ -56,8 +56,13 @@ export const AuthProvider = ({ children }) => {
 
             return response.data;
         } catch (error) {
-            // On remonte l'erreur avec un message lisible pour l'utilisateur
-            throw new Error(error.response?.data?.message || 'Email ou mot de passe incorrect');
+            // Symfony JWT retourne { message: "Invalid credentials." }
+            // On traduit ce message en français pour l'utilisateur
+            const message = error.response?.data?.message;
+            if (message === 'Invalid credentials.') {
+                throw new Error('Email ou mot de passe incorrect');
+            }
+            throw new Error(message || 'Email ou mot de passe incorrect');
         }
     };
 
@@ -124,4 +129,3 @@ export const useAuth = () => {
     }
     return context;
 };
-
