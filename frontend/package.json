@@ -20,7 +20,10 @@
     "react-chartjs-2": "^5.2.0",
     "react-dom": "^19.2.4",
     "react-icons": "^5.6.0",
+<<<<<<< HEAD
     "react-is": "^19.2.4",
+=======
+>>>>>>> eb3f7bd84812665b232ff8f38afb19dab0f2444a
     "react-redux": "^9.1.0",
     "react-router-dom": "^6.22.0",
     "react-toastify": "^10.0.4",
