@@ -1,3 +1,9 @@
+/* Ce qu'il fait :
+
+ Attend le chargement → affiche "Chargement..."
+ Non connecté → redirige vers /login
+ Page admin + pas admin → redirige vers /
+Tout est bon → affiche la page */
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 

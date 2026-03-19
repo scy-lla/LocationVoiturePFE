@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-const Register = () => {
+const Register = ({ isModal = false }) => {
     const [formData, setFormData] = useState({
         email: '',
         password: '',
@@ -16,6 +16,8 @@ const Register = () => {
     const { register } = useAuth();
     const navigate = useNavigate();
 
+    // Met à jour le champ correspondant dans formData
+    // [e.target.name] permet de gérer tous les champs avec une seule fonction
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
@@ -23,99 +25,110 @@ const Register = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
-
         try {
             await register(formData);
-            toast.success('Compte créé avec succès ! Connectez-vous.');
-            navigate('/login');
+            toast.success('Compte créé avec succès !');
+            // Rediriger vers login seulement si page seule
+            // Si isModal=true → on reste dans le modal Login
+            if (!isModal) {
+                navigate('/login');
+            }
         } catch (error) {
-            toast.error(error.response?.data?.message || 'Erreur lors de l\'inscription');
+            // error.message car AuthContext throw new Error(message)
+            toast.error(error.message || "Erreur lors de l'inscription");
         } finally {
             setLoading(false);
         }
     };
 
+    const formContent = (
+        <form onSubmit={handleSubmit}>
+            {!isModal && <ToastContainer />}
+            <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nom complet</label>
+                <input
+                    type="text"
+                    name="nom"
+                    placeholder="Jean Dupont"
+                    value={formData.nom}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 bg-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    required
+                />
+            </div>
+
+            <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Prénom</label>
+                <input
+                    type="text"
+                    name="prenom"
+                    placeholder="Jean"
+                    value={formData.prenom}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 bg-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    required
+                />
+            </div>
+
+            <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input
+                    type="email"
+                    name="email"
+                    placeholder="exemple@email.com"
+                    value={formData.email}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 bg-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    required
+                />
+            </div>
+
+            <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
+                <input
+                    type="tel"
+                    name="telephone"
+                    placeholder="06XXXXXXXX"
+                    value={formData.telephone}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 bg-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+            </div>
+
+            <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Mot de passe</label>
+                <input
+                    type="password"
+                    name="password"
+                    placeholder="••••••••"
+                    value={formData.password}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 bg-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    required
+                />
+            </div>
+
+            <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-gray-900 text-white py-3 rounded-lg font-medium hover:bg-gray-800 disabled:bg-gray-400 transition-all"
+            >
+                {loading ? 'Inscription...' : 'Créer un compte'}
+            </button>
+        </form>
+    );
+
+    // Si utilisé dans le modal Login → pas de fond
+    if (isModal) return formContent;
+
+    // Si page seule → avec fond noir
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="min-h-screen flex items-center justify-center bg-gray-900">
             <ToastContainer />
-            <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-                <h2 className="text-2xl font-bold text-center mb-6">Inscription</h2>
-                
-                <form onSubmit={handleSubmit}>
-                    <div className="mb-4">
-                        <label className="block text-gray-700 mb-2">Nom</label>
-                        <input
-                            type="text"
-                            name="nom"
-                            value={formData.nom}
-                            onChange={handleChange}
-                            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-                            required
-                        />
-                    </div>
-
-                    <div className="mb-4">
-                        <label className="block text-gray-700 mb-2">Prénom</label>
-                        <input
-                            type="text"
-                            name="prenom"
-                            value={formData.prenom}
-                            onChange={handleChange}
-                            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-                            required
-                        />
-                    </div>
-
-                    <div className="mb-4">
-                        <label className="block text-gray-700 mb-2">Email</label>
-                        <input
-                            type="email"
-                            name="email"
-                            value={formData.email}
-                            onChange={handleChange}
-                            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-                            required
-                        />
-                    </div>
-
-                    <div className="mb-4">
-                        <label className="block text-gray-700 mb-2">Téléphone</label>
-                        <input
-                            type="tel"
-                            name="telephone"
-                            value={formData.telephone}
-                            onChange={handleChange}
-                            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-                        />
-                    </div>
-
-                    <div className="mb-6">
-                        <label className="block text-gray-700 mb-2">Mot de passe</label>
-                        <input
-                            type="password"
-                            name="password"
-                            value={formData.password}
-                            onChange={handleChange}
-                            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-                            required
-                        />
-                    </div>
-
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400"
-                    >
-                        {loading ? 'Inscription...' : "S'inscrire"}
-                    </button>
-                </form>
-
-                <p className="mt-4 text-center text-gray-600">
-                    Déjà un compte ?{' '}
-                    <Link to="/login" className="text-blue-600 hover:underline">
-                        Se connecter
-                    </Link>
-                </p>
+            <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md">
+                <h2 className="text-2xl font-bold mb-1">Inscription</h2>
+                <p className="text-gray-500 text-sm mb-6">Créez votre compte</p>
+                {formContent}
             </div>
         </div>
     );

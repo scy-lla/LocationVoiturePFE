@@ -14,7 +14,10 @@ const Dashboard = () => {
     const fetchStats = async () => {
         try {
             const clientsRes = await api.get('/admin/clients');
-            setStats(prev => ({ ...prev, clients: clientsRes.data.count || 0 }));
+            setStats(prev => ({ 
+                ...prev, 
+                clients: clientsRes.data.length || 0 
+            }));
         } catch (error) {
             toast.error('Erreur lors du chargement des statistiques');
         } finally {
@@ -31,18 +34,18 @@ const Dashboard = () => {
             <ToastContainer />
             <div className="max-w-7xl mx-auto py-12 px-4">
                 <h1 className="text-3xl font-bold mb-8">📊 Dashboard Admin</h1>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="bg-white p-6 rounded-lg shadow">
                         <h3 className="text-xl font-semibold mb-2">👥 Clients</h3>
                         <p className="text-4xl font-bold text-blue-600">{stats.clients}</p>
                     </div>
-                    
+
                     <div className="bg-white p-6 rounded-lg shadow">
                         <h3 className="text-xl font-semibold mb-2">📅 Réservations</h3>
                         <p className="text-4xl font-bold text-green-600">{stats.reservations}</p>
                     </div>
-                    
+
                     <div className="bg-white p-6 rounded-lg shadow">
                         <h3 className="text-xl font-semibold mb-2">🚗 Voitures</h3>
                         <p className="text-4xl font-bold text-yellow-600">{stats.voitures}</p>
