@@ -65,8 +65,9 @@ const Register = ({ isModal = false, onSwitchToLogin }) => {
 
     const formContent = (
         <form onSubmit={handleSubmit} noValidate autoComplete="off">
-            {!isModal && <ToastContainer />}
-
+            {/* ✅ ToastContainer TOUJOURS présent */}
+            <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
+            
             <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Nom complet</label>
                 <input
@@ -130,7 +131,6 @@ const Register = ({ isModal = false, onSwitchToLogin }) => {
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-900">
-            <ToastContainer />
             <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md">
                 <h2 className="text-2xl font-bold mb-1">Inscription</h2>
                 <p className="text-gray-500 text-sm mb-6">Créez votre compte</p>
