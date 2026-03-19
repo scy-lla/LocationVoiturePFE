@@ -36,7 +36,7 @@ class AppCreateAdminCommand extends Command
         $admin->setRoles(['ROLE_ADMIN']);
         
         // 2. Hacher le mot de passe (JAMAIS en clair !)
-        $password = $this->hasher->hashPassword($admin, 'admin123');
+        $password = $this->hasher->hashPassword($admin, 'Adm!nL0c2024#Secure');
         $admin->setPassword($password);
         
         // 3. Sauvegarder dans la base de données
