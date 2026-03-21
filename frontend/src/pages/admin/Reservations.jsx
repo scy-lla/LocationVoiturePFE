@@ -5,7 +5,6 @@ import 'react-toastify/dist/ReactToastify.css';
 import ReservationTable from '../../components/admin/ReservationTable'; 
 
 const Reservations = () => {
-    // États pour les statistiques (comme ton ancien dashboard)
     const [stats, setStats] = useState({ 
         enAttente: 0, 
         confirmees: 0, 
@@ -15,8 +14,6 @@ const Reservations = () => {
 
     const [reservations, setReservations] = useState([]);
     const [users, setUsers] = useState([]); 
-    
-    // L'onglet par défaut est "En attente" comme sur ton exemple
     const [filter, setFilter] = useState('En attente');
     const [loading, setLoading] = useState(true);
 
@@ -36,7 +33,6 @@ const Reservations = () => {
             const allRes = Array.isArray(resRes.data) ? resRes.data : [];
             const userData = usersRes.data;
 
-            // Gestion des utilisateurs (pour afficher le count)
             let usersList = [];
             let totalUsersCount = 0;
 
@@ -50,7 +46,6 @@ const Reservations = () => {
                 }
             }
 
-            // Mise à jour des stats
             setStats({
                 enAttente: allRes.filter(r => r.statut === 'en_attente').length,
                 confirmees: allRes.filter(r => r.statut === 'confirmee').length,
@@ -63,7 +58,7 @@ const Reservations = () => {
             
         } catch (error) {
             console.error("Erreur de chargement :", error);
-            toast.error("Impossible de charger les données.");
+            toast.error("Impossible de charger les donnees.");
         } finally {
             setLoading(false);
         }
@@ -71,21 +66,21 @@ const Reservations = () => {
 
     const handleConfirm = async (id) => {
         try {
-            await api.put(`/reservation/admin/reservations/${id}/status`, { statut: 'confirmee' });
-            toast.success("Réservation confirmée !");
+            await api.put(`/reservation/admin/reservations/${id}/confirm`);
+            toast.success("Reservation confirmee !");
             fetchData(); 
         } catch (error) {
-            toast.error("Échec de la confirmation.");
+            toast.error("Echec de la confirmation.");
         }
     };
 
     const handleCancel = async (id) => {
         try {
-            await api.put(`/reservation/admin/reservations/${id}/status`, { statut: 'annulee' });
-            toast.success("Réservation annulée.");
+            await api.put(`/reservation/admin/reservations/${id}/cancel`);
+            toast.success("Reservation annulee.");
             fetchData(); 
         } catch (error) {
-            toast.error("Échec de l'annulation.");
+            toast.error("Echec de l'annulation.");
         }
     };
 
@@ -100,11 +95,10 @@ const Reservations = () => {
         );
     }
 
-    // Filtrage selon l'onglet choisi
     const filteredReservations = reservations.filter(r => {
         if (filter === 'En attente') return r.statut === 'en_attente';
-        if (filter === 'Confirmées') return r.statut === 'confirmee';
-        if (filter === 'Annulées') return r.statut === 'annulee';
+        if (filter === 'Confirmees') return r.statut === 'confirmee';
+        if (filter === 'Annulees') return r.statut === 'annulee';
         return false;
     });
 
@@ -113,19 +107,16 @@ const Reservations = () => {
             <ToastContainer position="top-right" />
             
             <div className="max-w-7xl mx-auto">
-                {/* En-tête EXACTEMENT comme ton exemple */}
                 <div className="mb-8">
-                    <p className="text-sm text-gray-500 mb-2">Gérez les réservations et les utilisateurs</p>
+                    <p className="text-sm text-gray-500 mb-2">Gerez les reservations et les utilisateurs</p>
                     <h1 className="text-2xl font-bold text-gray-900">Dashboard Admin</h1>
                 </div>
 
-                {/* CARTES STATISTIQUES - Exactement comme ton exemple Figma */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    {/* Carte 1 : Réservations en attente */}
                     <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-shadow">
                         <div className="flex justify-between items-start">
                             <div>
-                                <p className="text-sm text-gray-600 font-medium">Réservations en attente</p>
+                                <p className="text-sm text-gray-600 font-medium">Reservations en attente</p>
                                 <p className="text-4xl font-bold text-orange-500 mt-3">{stats.enAttente}</p>
                             </div>
                             <svg className="w-6 h-6 text-orange-400 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -134,11 +125,10 @@ const Reservations = () => {
                         </div>
                     </div>
                     
-                    {/* Carte 2 : Réservations confirmées */}
                     <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-shadow">
                         <div className="flex justify-between items-start">
                             <div>
-                                <p className="text-sm text-gray-600 font-medium">Réservations confirmées</p>
+                                <p className="text-sm text-gray-600 font-medium">Reservations confirmees</p>
                                 <p className="text-4xl font-bold text-green-500 mt-3">{stats.confirmees}</p>
                             </div>
                             <svg className="w-6 h-6 text-green-400 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -147,7 +137,6 @@ const Reservations = () => {
                         </div>
                     </div>
 
-                    {/* Carte 3 : Total utilisateurs */}
                     <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-shadow">
                         <div className="flex justify-between items-start">
                             <div>
@@ -161,10 +150,9 @@ const Reservations = () => {
                     </div>
                 </div>
 
-                {/* ONGLETS DE FILTRE - Exactement comme ton exemple */}
                 <div className="mb-6">
                     <div className="inline-flex bg-gray-100 rounded-lg p-1">
-                        {['En attente', 'Confirmées', 'Annulées', 'Utilisateurs'].map((tab) => (
+                        {['En attente', 'Confirmees', 'Annulees', 'Utilisateurs'].map((tab) => (
                             <button
                                 key={tab}
                                 onClick={() => setFilter(tab)}
@@ -176,8 +164,8 @@ const Reservations = () => {
                             >
                                 {tab} ({
                                     tab === 'En attente' ? stats.enAttente : 
-                                    tab === 'Confirmées' ? stats.confirmees : 
-                                    tab === 'Annulées' ? stats.annulees : 
+                                    tab === 'Confirmees' ? stats.confirmees : 
+                                    tab === 'Annulees' ? stats.annulees : 
                                     stats.totalUtilisateurs
                                 })
                             </button>
@@ -185,24 +173,22 @@ const Reservations = () => {
                     </div>
                 </div>
 
-                {/* TABLEAU - Change selon l'onglet */}
                 <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
                     <div className="p-6 border-b border-gray-200">
                         <h2 className="text-lg font-semibold text-gray-900">
-                            {filter === 'Utilisateurs' ? 'Utilisateurs enregistrés' : `Réservations ${filter.toLowerCase()}`}
+                            {filter === 'Utilisateurs' ? 'Utilisateurs enregistres' : 'Reservations ' + filter.toLowerCase()}
                         </h2>
                     </div>
                     
                     <div className="p-6">
                         {filter === 'Utilisateurs' ? (
-                            /* Tableau des UTILISATEURS */
                             <div className="overflow-x-auto">
                                 <table className="w-full">
                                     <thead>
                                         <tr className="text-left text-sm font-medium text-gray-700 border-b border-gray-200">
                                             <th className="pb-4 pr-6">Nom</th>
                                             <th className="pb-4 pr-6">Email</th>
-                                            <th className="pb-4 pr-6">Rôle</th>
+                                            <th className="pb-4 pr-6">Role</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100">
@@ -226,7 +212,7 @@ const Reservations = () => {
                                         {users.length === 0 && (
                                             <tr>
                                                 <td colSpan="3" className="py-8 text-center text-sm text-gray-500">
-                                                    Aucun utilisateur trouvé.
+                                                    Aucun utilisateur trouve.
                                                 </td>
                                             </tr>
                                         )}
@@ -234,7 +220,6 @@ const Reservations = () => {
                                 </table>
                             </div>
                         ) : (
-                            /* Tableau des RÉSERVATIONS */
                             filteredReservations.length > 0 ? (
                                 <ReservationTable 
                                     reservations={filteredReservations}
@@ -243,7 +228,7 @@ const Reservations = () => {
                                 />
                             ) : (
                                 <div className="text-center py-12 text-gray-500">
-                                    Aucune réservation {filter.toLowerCase()} pour le moment.
+                                    Aucune reservation pour le moment.
                                 </div>
                             )
                         )}
@@ -255,3 +240,7 @@ const Reservations = () => {
 };
 
 export default Reservations;
+
+
+
+

@@ -12,60 +12,17 @@ const MesReservations = () => {
     }, []);
 
     const fetchMyReservations = async () => {
-    try {
-        setLoading(true);
-        
-        const token = localStorage.getItem('token');
-        const userEmail = localStorage.getItem('email'); // On récupère l'email du user connecté
-        
-        console.log("🔑 Token :", token ? "Présent" : "Absent");
-        console.log("📧 Email user :", userEmail);
-
-        if (!token || !userEmail) {
-            toast.error("Session invalide. Veuillez vous reconnecter.");
-            return;
+        try {
+            setLoading(true);
+            const res = await api.get('/reservation/my');
+            setReservations(res.data);
+        } catch (error) {
+            console.error("Erreur:", error);
+            toast.error("Impossible de charger vos réservations.");
+        } finally {
+            setLoading(false);
         }
-
-        // On utilise l'endpoint ADMIN qui fonctionne (tu l'as vu dans debug:router)
-        // Même si c'est un client, on essaie car parfois les permissions sont larges
-        const res = await api.get('/reservation/admin/reservations');
-        
-        console.log("✅ Toutes les réservations reçues:", res.data);
-
-        // On filtre pour ne garder QUE celles de l'utilisateur connecté
-        const myReservations = res.data.filter(
-            reservation => reservation.utilisateur_email === userEmail
-        );
-
-        console.log("🎯 Réservations filtrées pour cet user:", myReservations);
-        
-        setReservations(myReservations);
-        
-    } catch (error) {
-        console.error("❌ Erreur complète:", error);
-        
-        // Si l'endpoint admin ne marche pas pour un client, on essaie une autre méthode
-        if (error.response?.status === 403 || error.response?.status === 401) {
-            console.log("⚠️ Accès refusé aux réservations admin. Tentative avec endpoint public...");
-            
-            // Essaie l'endpoint général des réservations (si il existe)
-            try {
-                const resPublic = await api.get('/reservation/');
-                const myReservations = resPublic.data.filter(
-                    r => r.utilisateur_email === localStorage.getItem('email')
-                );
-                setReservations(myReservations);
-                return;
-            } catch (e) {
-                console.error("❌ Échec aussi avec l'endpoint public");
-            }
-        }
-        
-        toast.error("Impossible de charger vos réservations. Vérifiez votre connexion.");
-    } finally {
-        setLoading(false);
-    }
-};
+    };
 
     if (loading) {
         return (
@@ -111,7 +68,9 @@ const MesReservations = () => {
                                         {reservations.map((res) => (
                                             <tr key={res.id} className="hover:bg-gray-50">
                                                 <td className="py-4 pr-6">
-                                                    <div className="text-sm font-medium text-gray-900">{res.voiture_modele}</div>
+                                                    <div className="text-sm font-medium text-gray-900">
+                                                        {res.voiture?.marque} {res.voiture?.modele}
+                                                    </div>
                                                 </td>
                                                 <td className="py-4 pr-6">
                                                     <div className="text-xs text-gray-600 space-y-0.5">
@@ -131,7 +90,7 @@ const MesReservations = () => {
                                                     </span>
                                                 </td>
                                                 <td className="py-4 pr-6 text-sm font-bold text-gray-900">
-                                                    {res.prix_total} €
+                                                    {res.prixTotal} MAD
                                                 </td>
                                             </tr>
                                         ))}

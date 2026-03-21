@@ -8,98 +8,79 @@
 namespace App\Controller\Api;
 
 // --- IMPORTS DES CLASSES NÉCESSAIRES ---
-use App\Entity\Reservation;      // Le modèle "Réservation" (table SQL)
-use App\Entity\Voiture;          // Le modèle "Voiture" (pour lier une résa à une voiture)
-use App\Entity\Utilisateur;      // Le modèle "Utilisateur" (pour lier une résa à un client)
-use App\Service\ReservationService; // NOTRE SERVICE PERSONNALISÉ (contient la logique anti-conflit)
-use App\Repository\ReservationRepository; // Outil pour lire les résas en BDD
-use Doctrine\ORM\EntityManagerInterface;  // Outil pour écrire en BDD (persist/flush)
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController; // Classe de base Symfony
-use Symfony\Component\HttpFoundation\JsonResponse; // Pour renvoyer du JSON
-use Symfony\Component\HttpFoundation\Request; // Pour lire les données envoyées par React
-use Symfony\Component\HttpFoundation\Response; // Pour les codes HTTP (200, 404, etc.)
-use Symfony\Component\Routing\Attribute\Route; // Pour définir les URLs
-use Symfony\Component\Security\Http\Attribute\IsGranted; // Pour sécuriser les routes (JWT)
+use App\Entity\Reservation;
+use App\Entity\Voiture;
+use App\Entity\Utilisateur;
+use App\Service\ReservationService;
+use App\Repository\ReservationRepository;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 // ============================================================================
 // DÉFINITION DU CONTRÔLEUR
 // ============================================================================
 
 #[Route('/api/reservation')]
-// PRÉFIXE GLOBAL : Toutes les routes de ce fichier commenceront par /api/reservation
-// Ex: La fonction getReservations sera accessible via GET /api/reservation/
-
 class ReservationController extends AbstractController
 {
-    // --- CONSTRUCTEUR (INJECTION DE DÉPENDANCES) ---
-    // Symfony injecte automatiquement ces outils quand on utilise le contrôleur.
+    // --- CONSTRUCTEUR ---
     
     public function __construct(
-        private EntityManagerInterface $entityManager, // Outil d'écriture (Ajout/Modif/Suppr)
-        private ReservationRepository $reservationRepository, // Outil de lecture (Recherche)
-        private ReservationService $reservationService // Outil de logique métier (Vérif conflits)
-    ) {
-        // Rien à faire ici, Symfony a déjà rempli les variables privées ci-dessus.
-    }
+        private EntityManagerInterface $entityManager,
+        private ReservationRepository $reservationRepository,
+        private ReservationService $reservationService
+    ) {}
 
     // ==========================================================================
-    // ENDPOINT 1 : GET /api/reservation/admin/reservations
-    // RÔLE : Liste TOUTES les réservations (Réservé aux ADMINS)
+    // ENDPOINT 1 : GET /api/reservation/admin/reservations (ADMIN)
     // ==========================================================================
     
     #[Route('/admin/reservations', name: 'api_admin_reservations_list', methods: ['GET'])]
-    #[IsGranted('ROLE_ADMIN')] // 🔐 SÉCURITÉ : Seul un utilisateur avec le rôle ROLE_ADMIN peut entrer ici.
+    #[IsGranted('ROLE_ADMIN')]
     public function getAllReservations(): JsonResponse
     {
-        // 1. Lecture : On récupère toutes les lignes de la table "reservation"
         $reservations = $this->reservationRepository->findAll();
-
-        // 2. Formatage : On prépare les données pour le JSON (on évite les boucles infinies)
         $data = [];
+
         foreach ($reservations as $reservation) {
             $data[] = [
                 'id' => $reservation->getId(),
                 'dateDebut' => $reservation->getDateDebut()?->format('Y-m-d H:i:s'),
                 'dateFin' => $reservation->getDateFin()?->format('Y-m-d H:i:s'),
                 'statut' => $reservation->getStatut(),
-                'prixTotal' => $reservation->getPrixTotal(), // ✅ Le prix figé
-                // Infos sur le client (pour que l'admin sache qui a réservé)
+                'prixTotal' => $reservation->getPrixTotal(),
                 'client_email' => $reservation->getUtilisateur()?->getEmail(),
                 'client_nom' => $reservation->getUtilisateur()?->getNom(),
-                // Infos sur la voiture (pour que l'admin sache quelle voiture est prise)
                 'voiture_id' => $reservation->getVoiture()?->getId(),
                 'voiture_modele' => $reservation->getVoiture()?->getModele(),
             ];
         }
 
-        // 3. Réponse : On renvoie le tableau au frontend avec le code 200 (OK)
         return new JsonResponse($data, Response::HTTP_OK);
     }
 
     // ==========================================================================
-    // ENDPOINT 2 : PUT /api/reservation/admin/reservations/{id}/confirm
-    // RÔLE : Un admin confirme une réservation (Change le statut à 'confirmee')
+    // ENDPOINT 2 : PUT /api/reservation/admin/reservations/{id}/confirm (ADMIN)
     // ==========================================================================
 
     #[Route('/admin/reservations/{id}/confirm', name: 'api_admin_reservation_confirm', methods: ['PUT'])]
-    #[IsGranted('ROLE_ADMIN')] // 🔐 SÉCURITÉ : Réservé aux admins
+    #[IsGranted('ROLE_ADMIN')]
     public function confirmReservation(int $id): JsonResponse
     {
-        // 1. Recherche : On cherche la réservation par son ID
         $reservation = $this->reservationRepository->find($id);
 
-        // 2. Vérification : Si elle n'existe pas, on renvoie une erreur 404
         if (!$reservation) {
             return new JsonResponse(['error' => 'Réservation introuvable'], Response::HTTP_NOT_FOUND);
         }
 
-        // 3. Modification : On change le statut
         $reservation->setStatut('confirmee');
-
-        // 4. Sauvegarde : On écrit le changement dans la base de données
         $this->entityManager->flush();
 
-        // 5. Réponse : On confirme le succès
         return new JsonResponse([
             'success' => true,
             'message' => 'Réservation confirmée avec succès',
@@ -108,12 +89,11 @@ class ReservationController extends AbstractController
     }
 
     // ==========================================================================
-    // ENDPOINT 3 : PUT /api/reservation/admin/reservations/{id}/cancel
-    // RÔLE : Un admin annule une réservation (Change le statut à 'annulee')
+    // ENDPOINT 3 : PUT /api/reservation/admin/reservations/{id}/cancel (ADMIN)
     // ==========================================================================
 
     #[Route('/admin/reservations/{id}/cancel', name: 'api_admin_reservation_cancel', methods: ['PUT'])]
-    #[IsGranted('ROLE_ADMIN')] // 🔐 SÉCURITÉ : Réservé aux admins
+    #[IsGranted('ROLE_ADMIN')]
     public function cancelReservation(int $id): JsonResponse
     {
         $reservation = $this->reservationRepository->find($id);
@@ -133,26 +113,19 @@ class ReservationController extends AbstractController
     }
 
     // ==========================================================================
-    // ENDPOINT 4 : GET /api/reservation/my
-    // RÔLE : Un client voit SES propres réservations
+    // ENDPOINT 4 : GET /api/reservation/my (CLIENT)
     // ==========================================================================
 
     #[Route('/my', name: 'api_reservation_my', methods: ['GET'])]
-    #[IsGranted('IS_AUTHENTICATED_FULLY')] // 🔐 SÉCURITÉ : Il faut être connecté (n'importe quel rôle)
+    #[IsGranted('IS_AUTHENTICATED_FULLY')]
     public function getMyReservations(): JsonResponse
     {
-        // 1. Récupération de l'utilisateur connecté grâce au Token JWT
         /** @var \App\Entity\Utilisateur $user */
         $user = $this->getUser();
-
-        // 2. Recherche : On demande au repository de trouver toutes les résas de CET utilisateur
-        // (On suppose que tu as ajouté une méthode findByUtilisateur dans ton Repository, 
-        // sinon on filtre manuellement ci-dessous)
         $toutesLesResas = $this->reservationRepository->findAll();
         $mesResas = [];
 
         foreach ($toutesLesResas as $resa) {
-            // On garde seulement si la réservation appartient à l'utilisateur connecté
             if ($resa->getUtilisateur() && $resa->getUtilisateur()->getId() === $user->getId()) {
                 $mesResas[] = [
                     'id' => $resa->getId(),
@@ -164,7 +137,7 @@ class ReservationController extends AbstractController
                         'id' => $resa->getVoiture()?->getId(),
                         'marque' => $resa->getVoiture()?->getMarque(),
                         'modele' => $resa->getVoiture()?->getModele(),
-                        'image' => $resa->getVoiture()?->getImage(), // Pour afficher la photo
+                        'image' => $resa->getVoiture()?->getImage(),
                     ]
                 ];
             }
@@ -174,115 +147,114 @@ class ReservationController extends AbstractController
     }
 
     // ==========================================================================
-    // ENDPOINT 5 : POST /api/reservation/
-    // RÔLE : Un client crée une nouvelle réservation (CŒUR DU SYSTÈME)
+    // ENDPOINT 5 : POST /api/reservation/ (CRÉATION - CŒUR DU SYSTÈME)
     // ==========================================================================
 
-    #[Route('/', name: 'api_reservation_create', methods: ['POST'])]
-    #[IsGranted('IS_AUTHENTICATED_FULLY')] // 🔐 SÉCURITÉ : Il faut être connecté pour réserver
+    #[Route('', name: 'api_reservation_create', methods: ['POST'])]
+    #[IsGranted('IS_AUTHENTICATED_FULLY')]
     public function createReservation(Request $request): JsonResponse
     {
-        // --- ÉTAPE 1 : LECTURE DES DONNÉES ENVOYÉES PAR LE FRONTEND ---
-        
+        // 1. Lecture des données JSON
         $data = json_decode($request->getContent(), true);
         
-        // Vérifie si le JSON est valide
         if (json_last_error() !== JSON_ERROR_NONE) {
-            return new JsonResponse(['error' => 'Format JSON invalide'], Response::HTTP_BAD_REQUEST);
+            return new JsonResponse(['error' => 'JSON invalide'], Response::HTTP_BAD_REQUEST);
         }
 
-        // Vérifie les champs obligatoires
         if (!isset($data['dateDebut'], $data['dateFin'], $data['voiture_id'])) {
-            return new JsonResponse([
-                'error' => 'Données incomplètes. Il faut : dateDebut, dateFin, voiture_id'
-            ], Response::HTTP_BAD_REQUEST);
+            return new JsonResponse(['error' => 'Données incomplètes'], Response::HTTP_BAD_REQUEST);
         }
 
         try {
-            // Convertit les chaînes de dates en objets DateTime PHP
             $dateDebut = new \DateTime($data['dateDebut']);
             $dateFin = new \DateTime($data['dateFin']);
         } catch (\Exception $e) {
-            return new JsonResponse(['error' => 'Format de date incorrect (utilisez YYYY-MM-DD)'], Response::HTTP_BAD_REQUEST);
+            return new JsonResponse(['error' => 'Format de date incorrect'], Response::HTTP_BAD_REQUEST);
         }
 
-        // Vérification logique simple : La fin ne peut pas être avant le début
         if ($dateFin <= $dateDebut) {
-            return new JsonResponse(['error' => 'La date de fin doit être après la date de début'], Response::HTTP_BAD_REQUEST);
+            return new JsonResponse(['error' => 'La date de fin doit être après le début'], Response::HTTP_BAD_REQUEST);
         }
 
-        // --- ÉTAPE 2 : VÉRIFICATION DE LA VOITURE ---
-
+        // 2. Vérification de la voiture
         $voiture = $this->entityManager->getRepository(Voiture::class)->find($data['voiture_id']);
-        
         if (!$voiture) {
-            return new JsonResponse(['error' => 'La voiture demandée n\'existe pas'], Response::HTTP_NOT_FOUND);
+            return new JsonResponse(['error' => 'Voiture introuvable'], Response::HTTP_NOT_FOUND);
         }
 
-        // --- ÉTAPE 3 : VÉRIFICATION DES CONFLITS (LA MAGIE OPÈRE ICI) ---
-        
-        // On appelle notre Service personnalisé qui contient la logique de chevauchement
-        $estDisponible = $this->reservationService->isAvailable($voiture, $dateDebut, $dateFin);
-
-        if (!$estDisponible) {
-            // Code 409 = Conflict. Le frontend devra afficher un message d'erreur.
+        // 3. Vérification des conflits (Disponibilité)
+        if (!$this->reservationService->isAvailable($voiture->getId(), $dateDebut, $dateFin)) {
             return new JsonResponse([
-                'error' => 'Ce véhicule n\'est pas disponible sur cette période.',
-                'details' => 'Il existe déjà une réservation confirmée ou en attente qui chevauche vos dates.'
+                'error' => 'Ce véhicule n\'est pas disponible sur cette période.'
             ], Response::HTTP_CONFLICT);
         }
 
-        // --- ÉTAPE 4 : CALCUL DU PRIX TOTAL ---
-
-        // Calcule la différence entre les deux dates
+        // 4. Calcul du prix total
         $interval = $dateDebut->diff($dateFin);
         $nbJours = $interval->days;
+        if ($nbJours === 0) $nbJours = 1;
         
-        // Sécurité : Si la différence est de 0 jour (même jour), on compte 1 jour minimum
-        if ($nbJours === 0) {
-            $nbJours = 1;
-        }
-
-        // Prix Total = Nombre de jours × Prix journalier de la voiture
         $prixTotal = $nbJours * $voiture->getPrixJour();
 
-        // --- ÉTAPE 5 : RÉCUPÉRATION DE L'UTILISATEUR CONNECTÉ (SÉCURITÉ) ---
-
-        // ⚠️ IMPORTANT : On NE FAIT PAS CONFIANCE au frontend pour l'ID utilisateur.
-        // On récupère directement l'utilisateur authentifié via son Token JWT.
-        /** @var \App\Entity\Utilisateur $utilisateur */
-        $utilisateur = $this->getUser();
-
-        if (!$utilisateur) {
-            return new JsonResponse(['error' => 'Erreur interne : Utilisateur non identifié'], Response::HTTP_UNAUTHORIZED);
+        // ============================================================
+        // 🔧 CORRECTION CRUCIALE ICI (Récupération robuste de l'utilisateur)
+        // ============================================================
+        
+        // A. On récupère l'utilisateur connecté via le token JWT
+        $userConnecte = $this->getUser();
+        
+        if (!$userConnecte) {
+            return new JsonResponse(['error' => 'Utilisateur non authentifié'], Response::HTTP_UNAUTHORIZED);
         }
 
-        // --- ÉTAPE 6 : CRÉATION DE L'OBJET RÉSERVATION ---
+        // B. On extrait son ID
+        $idUtilisateur = $userConnecte->getId();
 
+        // C. On RECHARGE l'entité Utilisateur proprement depuis la base de données
+        // Cela évite les erreurs de type "Proxy" ou incompatibilité de classe
+        /** @var \App\Entity\Utilisateur $utilisateur */
+        $utilisateur = $this->entityManager->getRepository(Utilisateur::class)->find($idUtilisateur);
+
+        if (!$utilisateur) {
+            return new JsonResponse(['error' => 'Erreur système: Utilisateur introuvable en base'], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+        // ============================================================
+        // FIN DE LA CORRECTION
+        // ============================================================
+
+        // 5. Création de l'objet Réservation
         $reservation = new Reservation();
         $reservation->setDateDebut($dateDebut);
         $reservation->setDateFin($dateFin);
-        $reservation->setStatut('en_attente'); // Par défaut, toute nouvelle résa est en attente de validation admin
-        $reservation->setPrixTotal($prixTotal); // On fige le prix calculé
-        $reservation->setVoiture($voiture);     // On lie la voiture
-        $reservation->setUtilisateur($utilisateur); // On lie le client connecté
+        $reservation->setStatut('en_attente');
+        $reservation->setPrixTotal($prixTotal);
+        $reservation->setVoiture($voiture);
+        
+        // On assigne l'utilisateur rechargé proprement
+        $reservation->setUtilisateur($utilisateur);
 
-        // --- ÉTAPE 7 : SAUVEGARDE EN BASE DE DONNÉES ---
+        // 6. Sauvegarde en base de données
+        try {
+            $this->entityManager->persist($reservation);
+            $this->entityManager->flush();
 
-        $this->entityManager->persist($reservation); // Prépare l'insertion
-        $this->entityManager->flush(); // Exécute l'insertion SQL réelle
+            return new JsonResponse([
+                'success' => true,
+                'message' => 'Votre demande de réservation a été envoyée avec succès !',
+                'data' => [
+                    'id' => $reservation->getId(),
+                    'prixTotal' => $reservation->getPrixTotal(),
+                    'statut' => $reservation->getStatut(),
+                    'nbJours' => $nbJours
+                ]
+            ], Response::HTTP_CREATED);
 
-        // --- ÉTAPE 8 : RÉPONSE DE SUCCÈS AU FRONTEND ---
-
-        return new JsonResponse([
-            'success' => true,
-            'message' => 'Votre demande de réservation a été envoyée avec succès !',
-            'data' => [
-                'id' => $reservation->getId(),
-                'prixTotal' => $reservation->getPrixTotal(),
-                'statut' => $reservation->getStatut(),
-                'nbJours' => $nbJours
-            ]
-        ], Response::HTTP_CREATED); // Code 201 = Ressource créée
+        } catch (\Exception $e) {
+            // En cas d'erreur SQL inattendue, on renvoie le message exact pour déboguer
+            return new JsonResponse([
+                'error' => 'Erreur lors de l\'enregistrement',
+                'details' => $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 }

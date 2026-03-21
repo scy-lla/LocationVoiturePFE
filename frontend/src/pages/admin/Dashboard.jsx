@@ -2,121 +2,87 @@ import { useEffect, useState } from 'react';
 import api from '../../services/api'; 
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-// Import du composant enfant pour afficher le tableau des réservations
 import ReservationTable from '../../components/admin/ReservationTable'; 
 
 const Dashboard = () => {
-    // --- ÉTATS (STATE) ---
-    // Stocke les nombres pour les 3 cartes du haut + le total utilisateurs
     const [stats, setStats] = useState({ 
         enAttente: 0, 
         confirmees: 0, 
         annulees: 0, 
         totalUtilisateurs: 0 
     });
-
-    // Stocke la liste complète des réservations brutes venant de l'API
     const [reservations, setReservations] = useState([]);
-    
-    // Stocke la liste complète des utilisateurs bruts venant de l'API
     const [users, setUsers] = useState([]); 
-    
-    // Gère l'onglet actuellement sélectionné (ex: "En attente", "Utilisateurs"...)
     const [filter, setFilter] = useState('En attente');
-    
-    // Gère l'affichage de l'écran de chargement au démarrage
     const [loading, setLoading] = useState(true);
 
-    // --- EFFET DE CHARGEMENT ---
-    // Ce hook s'exécute UNE SEULE FOIS lorsque le composant est monté sur la page.
     useEffect(() => {
         fetchDashboardData();
     }, []);
 
-    /**
-     * FONCTION PRINCIPALE : fetchDashboardData
-     * Rôle : Récupérer toutes les données nécessaires auprès du Backend (Symfony).
-     */
     const fetchDashboardData = async () => {
         try {
             setLoading(true);
             
-            // On lance les deux requêtes API en PARALLÈLE pour gagner du temps
             const [resRes, usersRes] = await Promise.all([
-                api.get('/reservation/admin/reservations'), // Récupère les réservations
-                api.get('/admin/clients')                   // Récupère les clients
+                api.get('/reservation/admin/reservations'),
+                api.get('/admin/clients')
             ]);
 
-            // Traitement sécurisé des données (si l'API renvoie undefined, on met un tableau vide)
             const allRes = Array.isArray(resRes.data) ? resRes.data : [];
             const userData = usersRes.data;
 
-            // --- CORRECTION DU BUG UTILISATEURS ---
-            // Ton API Symfony renvoie un format personnalisé : { count: 5, clients: [...] }
-            // On extrait donc manuellement ces deux valeurs.
             let usersList = [];
             let totalUsersCount = 0;
 
             if (userData && typeof userData === 'object') {
-                // Cas 1 : Format personnalisé (le tien)
                 if (userData.clients !== undefined) {
                     usersList = Array.isArray(userData.clients) ? userData.clients : [];
                     totalUsersCount = typeof userData.count === 'number' ? userData.count : usersList.length;
-                } 
-                // Cas 2 : Format Tableau direct (au cas où)
-                else if (Array.isArray(userData)) {
+                } else if (Array.isArray(userData)) {
                     usersList = userData;
                     totalUsersCount = userData.length;
                 }
             }
 
-            // Mise à jour des statistiques pour les cartes du haut
             setStats({
                 enAttente: allRes.filter(r => r.statut === 'en_attente').length,
                 confirmees: allRes.filter(r => r.statut === 'confirmee').length,
                 annulees: allRes.filter(r => r.statut === 'annulee').length,
-                totalUtilisateurs: totalUsersCount // Utilisation de la valeur corrigée
+                totalUtilisateurs: totalUsersCount
             });
 
-            // Mise à jour des listes complètes pour pouvoir les filtrer plus tard
             setUsers(usersList);
             setReservations(allRes);
             
         } catch (error) {
             console.error("Erreur de chargement :", error);
-            toast.error("Impossible de charger les données du dashboard.");
+            toast.error("Impossible de charger les donnees du dashboard.");
         } finally {
-            setLoading(false); // Fin du chargement, qu'il y ait eu une erreur ou non
+            setLoading(false);
         }
     };
 
-    /**
-     * GESTIONNAIRES D'ACTIONS
-     * Ces fonctions sont passées au composant enfant pour qu'il puisse les appeler.
-     */
     const handleConfirm = async (id) => {
         try {
-            // Appel API pour changer le statut en 'confirmee'
-            await api.put(`/reservation/admin/reservations/${id}/status`, { statut: 'confirmee' });
-            toast.success("Réservation confirmée !");
-            fetchDashboardData(); // On recharge tout pour mettre à jour les compteurs
+            await api.put(`/reservation/admin/reservations/${id}/confirm`);
+            toast.success("Reservation confirmee !");
+            fetchDashboardData();
         } catch (error) {
-            toast.error("Échec de la confirmation.");
+            toast.error("Echec de la confirmation.");
         }
     };
 
     const handleCancel = async (id) => {
         try {
-            // Appel API pour changer le statut en 'annulee'
-            await api.put(`/reservation/admin/reservations/${id}/status`, { statut: 'annulee' });
-            toast.success("Réservation annulée.");
-            fetchDashboardData(); // On recharge tout
+            await api.put(`/reservation/admin/reservations/${id}/cancel`);
+            toast.success("Reservation annulee.");
+            fetchDashboardData();
         } catch (error) {
-            toast.error("Échec de l'annulation.");
+            toast.error("Echec de l'annulation.");
         }
     };
 
-    // --- AFFICHAGE DE CHARGEMENT ---
     if (loading) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -128,49 +94,40 @@ const Dashboard = () => {
         );
     }
 
-    // --- LOGIQUE DE FILTRAGE ---
-    // On crée une nouvelle liste qui ne contient que les réservations correspondant à l'onglet choisi
     const filteredReservations = reservations.filter(r => {
         if (filter === 'En attente') return r.statut === 'en_attente';
-        if (filter === 'Confirmées') return r.statut === 'confirmee';
-        if (filter === 'Annulées') return r.statut === 'annulee';
+        if (filter === 'Confirmees') return r.statut === 'confirmee';
+        if (filter === 'Annulees') return r.statut === 'annulee';
         return false;
     });
 
-    // --- RENDER (AFFICHAGE) ---
     return (
         <div className="min-h-screen bg-white">
             <ToastContainer position="top-right" />
             
             <div className="max-w-7xl mx-auto px-6 py-8">
-                {/* En-tête */}
                 <div className="mb-8">
-                    <p className="text-sm text-gray-500 mb-2">Gérez les réservations et les utilisateurs</p>
+                    <p className="text-sm text-gray-500 mb-2">Gerez les reservations et les utilisateurs</p>
                     <h1 className="text-2xl font-bold text-gray-900">Dashboard Admin</h1>
                 </div>
 
-                {/* CARTES STATISTIQUES - Style Figma */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    
-                    {/* Carte 1 : Réservations en attente (Orange) */}
                     <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-shadow duration-300">
                         <div className="flex justify-between items-start">
                             <div>
-                                <p className="text-sm text-gray-600 font-medium">Réservations en attente</p>
+                                <p className="text-sm text-gray-600 font-medium">Reservations en attente</p>
                                 <p className="text-4xl font-bold text-orange-500 mt-3">{stats.enAttente}</p>
                             </div>
-                            {/* Icône SVG sans fond, alignée avec le texte */}
                             <svg className="w-6 h-6 text-orange-400 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                         </div>
                     </div>
                     
-                    {/* Carte 2 : Réservations confirmées (Vert) */}
                     <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-shadow duration-300">
                         <div className="flex justify-between items-start">
                             <div>
-                                <p className="text-sm text-gray-600 font-medium">Réservations confirmées</p>
+                                <p className="text-sm text-gray-600 font-medium">Reservations confirmees</p>
                                 <p className="text-4xl font-bold text-green-500 mt-3">{stats.confirmees}</p>
                             </div>
                             <svg className="w-6 h-6 text-green-400 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -179,7 +136,6 @@ const Dashboard = () => {
                         </div>
                     </div>
 
-                    {/* Carte 3 : Total utilisateurs (Bleu) */}
                     <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-shadow duration-300">
                         <div className="flex justify-between items-start">
                             <div>
@@ -193,10 +149,9 @@ const Dashboard = () => {
                     </div>
                 </div>
 
-                {/* ONGLETS DE FILTRE - Style Figma */}
                 <div className="mb-6">
                     <div className="inline-flex bg-gray-100 rounded-lg p-1">
-                        {['En attente', 'Confirmées', 'Annulées', 'Utilisateurs'].map((tab) => (
+                        {['En attente', 'Confirmees', 'Annulees', 'Utilisateurs'].map((tab) => (
                             <button
                                 key={tab}
                                 onClick={() => setFilter(tab)}
@@ -208,8 +163,8 @@ const Dashboard = () => {
                             >
                                 {tab} ({
                                     tab === 'En attente' ? stats.enAttente : 
-                                    tab === 'Confirmées' ? stats.confirmees : 
-                                    tab === 'Annulées' ? stats.annulees : 
+                                    tab === 'Confirmees' ? stats.confirmees : 
+                                    tab === 'Annulees' ? stats.annulees : 
                                     stats.totalUtilisateurs
                                 })
                             </button>
@@ -217,16 +172,14 @@ const Dashboard = () => {
                     </div>
                 </div>
 
-                {/* CONTENU PRINCIPAL - TABLEAU */}
                 <div className="bg-white rounded-xl border border-gray-200">
                     <div className="p-6 border-b border-gray-200">
                         <h2 className="text-lg font-semibold text-gray-900">
-                            {filter === 'Utilisateurs' ? 'Utilisateurs enregistrés' : ''}
+                            {filter === 'Utilisateurs' ? 'Utilisateurs enregistres' : ''}
                         </h2>
                     </div>
                     
                     <div className="p-6">
-                        {/* Condition : Si l'onglet "Utilisateurs" est actif */}
                         {filter === 'Utilisateurs' ? (
                             <div className="overflow-x-auto">
                                 <table className="w-full">
@@ -234,7 +187,7 @@ const Dashboard = () => {
                                         <tr className="text-left text-sm font-medium text-gray-700 border-b border-gray-200">
                                             <th className="pb-4 pr-6">Nom</th>
                                             <th className="pb-4 pr-6">Email</th>
-                                            <th className="pb-4 pr-6">Rôle</th>
+                                            <th className="pb-4 pr-6">Role</th>
                                             <th className="pb-4">Date d'inscription</th>
                                         </tr>
                                     </thead>
@@ -246,14 +199,12 @@ const Dashboard = () => {
                                                 </td>
                                                 <td className="py-4 pr-6 text-sm text-gray-600">{user.email}</td>
                                                 <td className="py-4 pr-6">
-                                                    {/* Badge Admin violet avec point blanc */}
                                                     {user.roles?.includes('ROLE_ADMIN') ? (
                                                         <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-600 text-white">
                                                             <span className="w-1.5 h-1.5 bg-white rounded-full mr-2"></span>
                                                             Admin
                                                         </span>
                                                     ) : (
-                                                        /* Badge Client bleu */
                                                         <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
                                                             Client
                                                         </span>
@@ -271,7 +222,7 @@ const Dashboard = () => {
                                         {users.length === 0 && (
                                             <tr>
                                                 <td colSpan="4" className="py-8 text-center text-sm text-gray-500">
-                                                    Aucun utilisateur trouvé.
+                                                    Aucun utilisateur trouve.
                                                 </td>
                                             </tr>
                                         )}
@@ -279,7 +230,6 @@ const Dashboard = () => {
                                 </table>
                             </div>
                         ) : (
-                            /* Sinon : Affichage des réservations via le composant externe */
                             filteredReservations.length > 0 ? (
                                 <ReservationTable 
                                     reservations={filteredReservations}
@@ -289,7 +239,7 @@ const Dashboard = () => {
                             ) : (
                                 <div className="text-center py-12">
                                     <p className="text-sm text-gray-500">
-                                        Aucune donnée à afficher.
+                                        Aucune donnee a afficher.
                                     </p>
                                 </div>
                             )
