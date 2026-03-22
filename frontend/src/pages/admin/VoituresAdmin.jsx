@@ -21,7 +21,7 @@ const VoituresAdmin = () => {
     });
 
     // URL de base pour les images (backend Symfony)
-    const IMAGE_BASE_URL = 'http://127.0.0.1:8000/uploads/voitures/';
+    const IMAGE_BASE_URL = 'http://127.0.0.1:8000'; //✅ hna fin kan mochkil mabanoch tsawr 3ndi
 
     useEffect(() => {
         fetchVoitures();
@@ -30,15 +30,10 @@ const VoituresAdmin = () => {
     const fetchVoitures = async () => {
         try {
             const response = await api.get('/voitures');
-            
-            // API Platform retourne les données dans 'hydra:member'
             const voituresData = response.data['hydra:member'] || response.data.member || response.data || [];
-            
-            // Vérifie que c'est bien un tableau
             if (Array.isArray(voituresData)) {
                 setVoitures(voituresData);
             } else {
-                console.error('Données reçues ne sont pas un tableau:', voituresData);
                 setVoitures([]);
             }
         } catch (error) {
@@ -61,7 +56,13 @@ const VoituresAdmin = () => {
             await api.post('/voitures', {
                 ...formData,
                 annee: parseInt(formData.annee),
-                prixJour: parseFloat(formData.prixJour),
+                prixJour: formData.prixJour,  // ✅ Envoie un string (texte) kan fiha mochkil makatbghich tzad lia voiture 
+                // (Le backend Symfony attend prixJour comme STRING (texte) Mais mon frontend envoie un DOUBLE (nombre décimal))
+                                              
+            }, {
+                headers: {
+                    'Content-Type': 'application/json'  // ✅ CORRIGÉ
+                }
             });
             toast.success('Voiture ajoutée avec succès !');
             setShowForm(false);
@@ -107,7 +108,6 @@ const VoituresAdmin = () => {
                     </button>
                 </div>
 
-                {/* Formulaire d'ajout */}
                 {showForm && (
                     <div className="bg-white p-6 rounded-lg shadow mb-8">
                         <h2 className="text-xl font-bold mb-4 text-gray-900">Ajouter une voiture</h2>
@@ -207,7 +207,6 @@ const VoituresAdmin = () => {
                     </div>
                 )}
 
-                {/* Grille de cartes des voitures */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {voitures.length === 0 ? (
                         <div className="col-span-full text-center py-8 text-gray-500 bg-white rounded-lg">
@@ -215,18 +214,14 @@ const VoituresAdmin = () => {
                         </div>
                     ) : (
                         voitures.map((voiture) => {
-                            // Récupère l'ID correctement (API Platform ou normal)
                             const voitureId = voiture.id || voiture['@id']?.replace('/api/voitures/', '');
-                            // Récupère le nom de l'image
                             const imageName = voiture.image || voiture.imageUrl;
-                            
                             return (
                                 <div key={voitureId} className="bg-white rounded-lg shadow overflow-hidden hover:shadow-lg transition">
-                                    {/* Image */}
                                     <div className="h-48 bg-gray-200 relative">
                                         {imageName ? (
-                                            <img 
-                                                src={`${IMAGE_BASE_URL}${imageName}`} 
+                                            <img
+                                                src={`${IMAGE_BASE_URL}${imageName}`}
                                                 alt={voiture.modele}
                                                 className="w-full h-full object-cover"
                                                 onError={(e) => {
@@ -240,20 +235,12 @@ const VoituresAdmin = () => {
                                             </div>
                                         )}
                                     </div>
-                                    
-                                    {/* Infos */}
                                     <div className="p-4">
                                         <h3 className="text-lg font-bold text-gray-900">{voiture.marque} {voiture.modele}</h3>
                                         <p className="text-sm text-gray-500">{voiture.annee}</p>
                                         <p className="text-xl font-bold text-purple-600 mt-2">{voiture.prixJour} MAD /jour</p>
-                                        <p className="text-sm text-gray-600 mt-1">
-                                            {voiture.carburant} • {voiture.transmission}
-                                        </p>
-                                        <p className="text-xs text-gray-400 mt-1">
-                                            🚗 {voiture.immatriculation}
-                                        </p>
-                                        
-                                        {/* Badge disponibilité */}
+                                        <p className="text-sm text-gray-600 mt-1">{voiture.carburant} • {voiture.transmission}</p>
+                                        <p className="text-xs text-gray-400 mt-1">🚗 {voiture.immatriculation}</p>
                                         <div className="mt-3">
                                             {voiture.disponibilite ? (
                                                 <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">✅ Disponible</span>
@@ -261,10 +248,8 @@ const VoituresAdmin = () => {
                                                 <span className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded-full">❌ Louée</span>
                                             )}
                                         </div>
-                                        
-                                        {/* Actions */}
                                         <div className="mt-4 flex space-x-2">
-                                            <button 
+                                            <button
                                                 onClick={() => handleDelete(voitureId)}
                                                 className="flex-1 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition text-sm"
                                             >

@@ -27,7 +27,7 @@ const Login = () => {
         if (!password.trim()) {
             newErrors.password = 'Le mot de passe est obligatoire';
         } else if (password.length < 6) {
-            newErrors.password = 'Le mot de passe doit contenir au moins 6 caractères';
+            newErrors.password = 'Email ou mot de passe incorrect';
         }
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
